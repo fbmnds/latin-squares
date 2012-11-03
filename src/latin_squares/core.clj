@@ -1,144 +1,120 @@
-;'(1 2 3)
+(def v1 '[[A B C D]
+         [A C D B]
+         [B A D C]
+         [D C A B]])
 
-(defn min-1
-  [x & more]
-  (loop [min x
-         more (seq more)]
-    (if-let [i (first  more)]
-      (recur (if (> i min) min i) (next more))
-      min)))
 
-(defn min-2
-  [x & more]
-  (loop [min x
-         [i & more] (seq more)]
-    (if i
-      (recur (if (> i min) min i) more)
-      min)))
+(def v2 '[[A B C D E F]
+         [B C D E F A]
+         [C D E F A B]
+         [D E F A B C]
+         [E F A B C D]
+         [F A B C D E]])
 
-(defn min-2a
-  [x & more]
-  (loop [min x
-         [i & more] (seq more)]
-    (if i
-      (recur (if (< i min) i min) more)
-      min)))
+(def v3 '[[A B C D]
+         [B A D C]
+         [D C B A]
+         [C D A B]])
 
-(defn min-3
-  [x & more]
-  (reduce (fn [i j] (if (< i j) i j)) x more))
+(def v4 '[[B D A C B]
+         [D A B C A]
+         [A B C A B]
+         [B C A B C]
+         [A D B C A]])
 
-(defn min-3a
-  [& more]
-  (reduce (fn [i j] (if (< i j) i j)) more))
+(def v5 [  [2 4 6 3]
+        [3 4 6 2]
+          [6 2 4]  ])
 
-(defn zipm-1
-  [ks vs]
-  (loop [m {}
-         ks (seq ks)
-         vs (seq vs)]
-    (if (and (first ks) (first vs))
-      (recur (assoc m (first ks) (first vs))  (next ks) (next vs))
-      m)))
+(def v6 [[1]
+        [1 2 1 2]
+        [2 1 2 1]
+        [1 2 1 2]
+        []       ])
 
-(defn zipm-2
-  [keys vals]
-  (loop [m {}
-         [ks & keys] (seq keys)
-         [vs & vals] (seq vals)]
-    (if (and ks vs)
-      (recur (assoc m ks vs) keys vals)
-      m)))
+(def v7 [[3 1 2]
+        [1 2 3 1 3 4]
+        [2 3 1 3]    ])
 
-(defn zipm-3
-  [keys vals]
-  (reduce (fn [result-of-the-prev-step [ks vs]]
-            (assoc result-of-the-prev-step ks vs))
-          {} (map vector keys vals) ))
+(def v8 [[8 6 7 3 2 5 1 4]
+        [6 8 3 7]
+        [7 3 8 6]
+        [3 7 6 8 1 4 5 2]
+              [1 8 5 2 4]
+              [8 1 2 4 5]])
 
-(defn zipm-4
-  [keys vals]
-  (apply hash-map (interleave keys vals)))
 
-(defn zipm-5
-  [keys vals]
-  (into {} (map vector keys vals)))
+(defn max-row-len [x] (reduce max (map count x)))
+(defn min-row-len [x] (reduce min (map count x)))
 
-;; SCIP
-
-(defn abs
+(defn fill-x
   [x]
-  (cond (< x 0) (- x)
-        :else x))
+  (loop [y []
+         row 0]
+    (cond (= row (count x)) y
+          :else (recur
+                 (cond (< (count (nth x row)) (max-row-len x))
+                       (conj y
+                             (vec
+                              (concat (nth x row)
+                                      (take (- (max-row-len x)
+                                               (count (nth x row))) (repeat :nil)))))
+                       :else (conj y (nth x row)))
+                 (inc row)))))
 
-(defn <eps?
+(defn contains-:nil?
   [x]
-  (cond (< x 0.001) true
-        :else false))
+  (cond (= (some #{:nil} x) :nil) true :else false))
 
-(defn average
-  [& xs]
-  (/ (apply + xs) (count xs)))
+(defn part-rows
+  [x dim]
+  (assert (= (max-row-len x) (min-row-len x)))
+  (assert (< dim (count x)))
+  (assert (< dim (max-row-len x)))
+  (loop [y []
+         row 0]
+    (cond (= row (count x)) y
+          :else (recur
+                 (conj y (vec (partition dim 1 (take dim (repeat :nil)) (nth x row))))
+                 (inc row)))))
 
-(defn sq
+(defn mark-:nil-in-col
   [x]
-  (* x x))
+  (loop [y ()
+         col 0]
+    (cond (= col (count x)) y
+          :else (recur
+                 (cond (contains-:nil? (nth x col))
+                       (conj y col)
+                       :else y)
+                 (inc col)))))
 
-(defn sqrt
-  [x]
-  (defn precision?
-    [guess x]
-    (cond (<eps? (abs (- (sq guess) x))) true
-          :else false))
-  (defn try-guess
-    [guess x]
-    (cond (precision? guess x) guess
-          :else (try-guess (average guess (/ x guess)) x)))
-  (cond (< x 0) (println "error: sqrt[x < 0]")
-        (<eps? x) 0
-        (<eps? (abs (- x 1))) 1
-        :else (try-guess 1.0 x)))
+(defn mark-:nil-pos
+  [parted-x]
+  (loop [y ()
+         row 0]
+    (cond (= row (count parted-x)) (set y)
+          :else (recur
+                 (concat y (mark-:nil-in-col (nth parted-x row)))
+                 (inc row)))))
 
-;; http://blog.malcolmsparks.com/?p=17
+(defn remove-:nil-col
+  [parted-x-row marked-pos]
+  (loop [y []
+         col 0]
+    (cond (= col (count parted-x-row)) (vec y)
+          :else (recur (cond
+                        (contains? marked-pos col) y
+                        :else (concat y (nth parted-x-row col)))
+                       (inc col)))))
 
-(defn
-  ^{:doc "Apply functions to values in a map."}
-  mapply
-  [m & kfs]
-  (apply hash-map
-         (mapcat (fn [[k f]] [k (f (get m k))])
-                 (partition 2 kfs))))
-
-;; Increment :count and retain the value of :foo.
-(mapply {:count 1 :foo "foo" :a 1} :count inc :foo identity :a identity)
-
-;; Remove :count and set the :foo to "bar".
-(mapply {:count 1 :foo "foo"} :foo (constantly "bar"))
-
-;;;;;;;;;;;;;;;;;;;;;;;;
-
-(fn [coll]
-  (cond (= (empty coll) (empty {:a 1})) :map
-        (= (empty coll) (empty '(1))) :list
-        (= (empty coll) (empty #{1})) :set
-        (= (empty coll) (empty [1])) :vector
-        :else :unknown))
-
-(defn t [coll]
-  (cond (= (empty coll) (empty {:a 1})) :map
-        (= (empty coll) (empty [])) (cond (= (peek coll) (first coll)) :list
-                                           :else :vector)
-        (= (empty coll) (empty #{1})) :set
-        :else :unknown))
-
-(fn [coll]
-  (cond (= (clojure.core/str coll) "()") :list
-        (= (clojure.core/str coll) "[]") :vector
-        (= (clojure.core/str coll) "#{}") :set
-        (= (clojure.core/str coll) "{}") :map
-        (= (empty coll) (empty {:a 1})) :map
-        (= (empty coll) ())
-           (cond (= (first (conj coll :test)) :test) :list
-                 :else :vector)
-        (= (empty coll) (empty #{1})) :set
-        :else :unknown))
+(defn reduce-parted-x
+  [parted-x]
+  (loop [y []
+         row 0]
+    (cond (= row (count parted-x)) y
+          :else (recur
+                 (conj y (remove-:nil-col
+                          (nth parted-x row)
+                          (mark-:nil-pos parted-x)))
+                 (inc row)))))
