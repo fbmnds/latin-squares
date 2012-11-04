@@ -44,10 +44,18 @@
               [8 1 2 4 5]])
 
 
-(defn max-row-len [x] (reduce max (map count x)))
-(defn min-row-len [x] (reduce min (map count x)))
+(defn max-row-len
+  "returns the length of the lengthiest row of a matrix"
+  [x]
+  (reduce max (map count x)))
+
+(defn min-row-len
+  "returns the lengths of the shortest row of a matrix"
+  [x]
+  (reduce min (map count x)))
 
 (defn fill-x
+  "fills all shorter rows of a matrix with :nil, if applicable"
   [x]
   (loop [y []
          row 0]
@@ -75,14 +83,18 @@
                  (inc row)))))
 
 (defn part-rows
-  [x dim] ; dim counted from 0
-  (assert (= (max-row-len x) (min-row-len x)))
+  "generates from a filled matrix the grid of all possible sub-squares
+  of a given sub-dimension"
+  [x dim]
+  (assert (= (max-row-len x) (min-row-len x))) ; i.e. filled matrix
   (assert (<= 2 dim (count x)))
   (assert (<= 2 dim (max-row-len x)))
   (mapv #( vec (partition dim 1 (take dim (repeat :nil)) %)) x))
 
 
 (defn square-at
+  "returns the square of the given dimension at position i, j from a grid
+  of all possible sub-squares of the same dimension"
   [parted-x dim i j]
   (assert (= dim (count (nth (nth parted-x 0) 0))))
   (assert (<= 2 dim (count (nth parted-x 0))))
@@ -94,6 +106,7 @@
 
 
 (defn contains-:nil?
+  "returns true, if the vector contain :nil"
   [x]
   (cond (= (some #{:nil} (flatten x)) :nil) true :else false))
 
@@ -105,14 +118,23 @@
 ;user> (transpose [[1 2 3 4 5] [6 7 8 9 10] [5 4 3 2 1]])
 ;[(1 6 5) (2 7 4) (3 8 3) (4 9 2) (5 10 1)]
 (defn transpose
+  "returns the transpose of the matrix.
+  BUG: returns vector of lists instead vector of vectors."
   [m]
   (loop [y (map vector (nth m 0))
          i 1]
     (cond (= i (count m)) y
           :else (recur (mapv concat y (map vector (nth m i))) (inc i)))))
 
-(defn max-row-member [x] (reduce max (map #(count (set %)) x)))
-(defn min-row-member [x] (reduce min (map #(count (set %)) x)))
+(defn max-row-member
+  "returns the maximum number of distinct elements per rows of a matrix"
+  [x]
+  (reduce max (map #(count (set %)) x)))
+
+(defn min-row-member
+  "returns the minimum number of distinct elements per rows of a matrix"
+  [x]
+  (reduce min (map #(count (set %)) x)))
 
 (defn latin-square?-1
   [s]
@@ -144,6 +166,7 @@
         :else true)))
 
 (defn latin-square?
+  "returns true, if the given matrix is a latin square"
   [s]
   (let [dim (max-row-len s)]
     (cond (and (not (contains-:nil? s))
@@ -161,15 +184,33 @@
           :else false)))
 
 
-(defn only-:nil? [x] (= (count (filter (fn [y] (= :nil y)) x)) (count x)))
+(defn only-:nil?
+  "returns true, if the vector contains only :nil"
+  [x]
+  (= (count (filter (fn [y] (= :nil y)) x)) (count x)))
+
+(defn any-:nil?
+  "returns true, if the vector contains any :nil"
+  [x]
+  (= (count (filter (fn [y] (= :nil y)) x)) 0))
 
 (defn shift-row
+  "returns the right-shifted vector, if the last element is :nil;
+  nil otherwise"
   [row]
   (cond (or (only-:nil? row) (not= (last row) :nil)) nil
         :else (vec (concat [:nil] (butlast row)))))
 
-
-
+(defn append-variants
+  "returns a vector of matrices, which results from appending all variants
+  (by right-shifting) of the right-aligned vector to the matrix"
+  [x v]
+  (assert (or (only-:nil? v) (not= (first v) :nil))) ; right-aligned vector
+  (cond (or (any-:nil? v) (only-:nil? v)) (vector (conj x v))
+        :else (loop [y []
+                     w v]
+                (cond (nil? w) y
+                      :else (recur (conj y (conj x w)) (shift-row w))))))
 
 ;;;;;;
 
