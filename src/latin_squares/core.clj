@@ -129,6 +129,12 @@
         :else true))
 
 
+(defn shift-row
+  [row]
+  (cond (= (last row) :nil) (vec (concat [:nil] (butlast row)))
+        :else nil))
+
+
 (defn mark-:nil-in-col
   [x]
   (loop [y ()
