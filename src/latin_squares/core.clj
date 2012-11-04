@@ -70,6 +70,69 @@
                        :else (conj y (nth x row)))
                  (inc row)))))
 
+
+
+(defn contains-:nil?
+  "returns true, if the seq contains :nil"
+  [x]
+  (cond (= (some #{:nil} (flatten x)) :nil) true :else false))
+
+(defn only-:nil?
+  "returns true, if the seq contains only :nil"
+  [x]
+  (= (count (filter (fn [y] (= :nil y)) (flatten x))) (count (flatten x))))
+
+(defn any-:nil?
+  "returns true, if the seq contains any :nil"
+  [x]
+  (= (count (filter (fn [y] (= :nil y)) (flatten x))) 0))
+
+
+(defn shift-row
+  "returns the right-shifted vector, if the last element is :nil;
+  nil otherwise"
+  [row]
+  (assert (not (nil? row)))
+  (cond (or (only-:nil? row) (not= (last row) :nil)) nil
+        :else (vec (concat [:nil] (butlast row)))))
+
+(defn append-variants
+  "returns a vector of matrices, which results from appending all variants
+  (by right-shifting) of the right-aligned vector to the matrix;
+  this applies analogously, if the input matrix is nil"
+  [x v]
+  (assert (or (only-:nil? v) (not= (first v) :nil))) ; right-aligned vector
+  (cond (or (any-:nil? v) (only-:nil? v)) (vector (conj x v))
+        :else (loop [y []
+                     w v]
+                (cond (nil? w) y
+                      :else (recur (conj y (vec (conj x w))) (shift-row w))))))
+
+
+(defn build-search-base
+  "generates the vector of all matrix variants to be derived from the
+  nontrivial, filled matrix"
+  [x]
+  (assert (not (nil? x)))
+  (assert (<= 2 (count x)))
+  (assert (<= 2 (min-row-len x)))
+  (assert (= (min-row-len x) (max-row-len x)))
+  (cond (any-:nil? x) (vector x)
+        :else (loop [y (append-variants nil (nth x 0))
+                     row-x 1]
+                (cond (= row-x (count x)) y
+                      :else (recur
+                             (loop [iter-y 0
+                                    new-y []]
+                               (cond (= iter-y (count y)) new-y
+                               :else (recur
+                                      (inc iter-y)
+                                      (into new-y
+                                            (append-variants (nth y iter-y)
+                                                             (nth x row-x))))))
+                             (inc row-x))))))
+
+
 (defn part-rows-1
   [x dim]
   (assert (= (max-row-len x) (min-row-len x)))
@@ -103,12 +166,6 @@
          di 0]
     (cond (= di dim) y
           :else (recur (conj y (nth (nth parted-x (+ i di)) j)) (inc di)))))
-
-
-(defn contains-:nil?
-  "returns true, if the vector contain :nil"
-  [x]
-  (cond (= (some #{:nil} (flatten x)) :nil) true :else false))
 
 
 ;user> (mapv concat (map vector [1 2 3]) (map vector [4 5 6]))
@@ -183,34 +240,6 @@
           true
           :else false)))
 
-
-(defn only-:nil?
-  "returns true, if the vector contains only :nil"
-  [x]
-  (= (count (filter (fn [y] (= :nil y)) x)) (count x)))
-
-(defn any-:nil?
-  "returns true, if the vector contains any :nil"
-  [x]
-  (= (count (filter (fn [y] (= :nil y)) x)) 0))
-
-(defn shift-row
-  "returns the right-shifted vector, if the last element is :nil;
-  nil otherwise"
-  [row]
-  (cond (or (only-:nil? row) (not= (last row) :nil)) nil
-        :else (vec (concat [:nil] (butlast row)))))
-
-(defn append-variants
-  "returns a vector of matrices, which results from appending all variants
-  (by right-shifting) of the right-aligned vector to the matrix"
-  [x v]
-  (assert (or (only-:nil? v) (not= (first v) :nil))) ; right-aligned vector
-  (cond (or (any-:nil? v) (only-:nil? v)) (vector (conj x v))
-        :else (loop [y []
-                     w v]
-                (cond (nil? w) y
-                      :else (recur (conj y (conj x w)) (shift-row w))))))
 
 ;;;;;;
 
