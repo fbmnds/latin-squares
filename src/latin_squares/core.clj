@@ -114,7 +114,7 @@
 (defn max-row-member [x] (reduce max (map #(count (set %)) x)))
 (defn min-row-member [x] (reduce min (map #(count (set %)) x)))
 
-(defn latin-square?
+(defn latin-square?-1
   [s]
   (assert (= (count s) (max-row-len s)))
   (assert (= (min-row-len s) (max-row-len s)))
@@ -128,12 +128,50 @@
         (< (min-row-member (transpose s)) (max-row-len s)) false
         :else true))
 
+(defn latin-square?-2
+  [s]
+  (let [dim (max-row-len s)]
+  (cond (not= (count s) dim) false
+        (not= (min-row-len s) dim) false
+        (contains-:nil? s) false
+        (not= (count (set (flatten s))) dim) false
+        (not= (count (set s)) dim) false
+        (not= (count (set (transpose s))) dim) false
+        (not= (min-row-member s) (max-row-member s)) false
+        (not= (min-row-member (transpose s)) (max-row-member (transpose s))) false
+        (< (min-row-member s) dim) false
+        (< (min-row-member (transpose s)) dim) false
+        :else true)))
+
+(defn latin-square?
+  [s]
+  (let [dim (max-row-len s)]
+    (cond (and (not (contains-:nil? s))
+               (= dim
+                  (count s)
+                  (min-row-len s)
+                  (count (set (flatten s)))
+                  (count (set s))
+                  (count (set (transpose s)))
+                  (min-row-member s)
+                  (max-row-member s)
+                  (min-row-member (transpose s))
+                  (max-row-member (transpose s))))
+          true
+          :else false)))
+
+
+(defn only-:nil? [x] (= (count (filter (fn [y] (= :nil y)) x)) (count x)))
 
 (defn shift-row
   [row]
-  (cond (= (last row) :nil) (vec (concat [:nil] (butlast row)))
-        :else nil))
+  (cond (or (only-:nil? row) (not= (last row) :nil)) nil
+        :else (vec (concat [:nil] (butlast row)))))
 
+
+
+
+;;;;;;
 
 (defn mark-:nil-in-col
   [x]
