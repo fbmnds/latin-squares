@@ -132,7 +132,6 @@
                                                              (nth x row-x))))))
                              (inc row-x))))))
 
-
 (defn part-rows-1
   [x dim]
   (assert (= (max-row-len x) (min-row-len x)))
@@ -155,17 +154,32 @@
   (mapv #( vec (partition dim 1 (take dim (repeat :nil)) %)) x))
 
 
+(defn grid-base
+  "generates for the given filled matrix the vector of the grid matrices
+  for all possible dimensions"
+  [x]
+  (assert (not (nil? x)))
+  (assert (<= 2 (count x)))
+  (assert (<= 2 (min-row-len x)))
+  (assert (= (min-row-len x) (max-row-len x)))
+  (loop [y [(part-rows x 2)]
+         dim 3]
+    (cond (> dim (min (count x) (min-row-len x))) y
+          :else (recur (into y [(part-rows x dim)]) (inc dim)))))
+
+
 (defn square-at
   "returns the square of the given dimension at position i, j from a grid
   of all possible sub-squares of the same dimension"
   [parted-x dim i j]
   (assert (= dim (count (nth (nth parted-x 0) 0))))
-  (assert (<= 2 dim (count (nth parted-x 0))))
+  ;(assert (<= 2 dim (count (nth parted-x 0))))
   (assert (<= 2 dim (count parted-x)))
   (loop [y []
          di 0]
     (cond (= di dim) y
           :else (recur (conj y (nth (nth parted-x (+ i di)) j)) (inc di)))))
+
 
 
 ;user> (mapv concat (map vector [1 2 3]) (map vector [4 5 6]))
@@ -239,6 +253,44 @@
                   (max-row-member (transpose s))))
           true
           :else false)))
+
+
+(defn count-a-grid-item
+  "returns the set of latin squares for the given grid item, i.e. the set of
+  latin squares of the dimension that is associated to the given grid item"
+  [x]
+  (assert (not (nil? x)))
+  (let [dim-sq (count (nth (nth x 0) 0))
+        dim-x-x (inc (- (count x) dim-sq))
+        dim-x-y (count (nth x 0))]
+    (loop [sq (square-at x dim-sq 0 0)
+           result (cond (latin-square? sq) (conj #{} sq)
+                        :else #{})
+           i 0
+           j 1]
+      (cond (= i dim-x-x) result
+            :else (recur (cond (and (< i dim-x-x) (< j dim-x-y))
+                               (square-at x dim-sq i j)
+                               :else sq)
+                         (cond (and (< i dim-x-x) (< j dim-x-y))
+                               (cond (latin-square? sq) (conj result sq)
+                                     :else result)
+                               :else result)
+                         (cond (= j dim-x-y) (inc i)
+                               :else i)
+                         (cond (= j dim-x-y) 0
+                               :else (inc j)))))))
+
+
+(defn solve
+  [x]
+  "return the accumulated set of latin squares in the given matrix"
+  (let [search-base (build-search-base (fill-x x))]
+    (loop [result #{}
+           i 0]
+      (cond (= i 2) result
+            :else (recur (conj (count-a-grid-item (nth search-base i)) result)
+                         (inc i))))))
 
 
 ;;;;;;
