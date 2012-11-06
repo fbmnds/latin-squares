@@ -260,6 +260,11 @@
 
 
 (defn summary
-  [x]
-  "return the result summary"
-  )
+  [lsq]
+  "calculate the result summary from the given accumulated set of latin squares
+   (http://langref.org/clojure/maps/algorithms/histogram)"
+  (reduce conj {} (for [[x xs]
+                        (group-by identity
+                                  (sort < (for [r lsq]
+                                    (count r))))]
+                    [x (count xs)])))
