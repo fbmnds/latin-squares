@@ -102,7 +102,7 @@
   this applies analogously, if the input matrix is nil"
   [x v]
   (assert (or (only-:nil? v) (not= (first v) :nil))) ; right-aligned vector
-  (cond (or (any-:nil? v) (only-:nil? v)) (vector (conj x v))
+  (cond (or (any-:nil? v) (only-:nil? v)) (conj [] (vec (conj x v)))
         :else (loop [y []
                      w v]
                 (cond (nil? w) y
@@ -169,6 +169,7 @@
          di 0]
     (cond (= di dim) y
           :else (recur (conj y (nth (nth parted-x (+ i di)) j)) (inc di)))))
+
 
 
 
@@ -250,9 +251,15 @@
   "return the accumulated set of latin squares in the given matrix"
   (let [search-base (build-search-base (fill-x x))
         dim-base (count search-base)
-        result (atom #{})]
+        result (atom [])]
     (doseq [i (range dim-base)]
       (let [grid-base (build-grid-base (nth search-base i))]
         (doseq [j (range (count grid-base))]
           (swap!  result into (count-a-grid-item (nth grid-base j))))))
-    @result))
+    (set @result)))
+
+
+(defn summary
+  [x]
+  "return the result summary"
+  )
