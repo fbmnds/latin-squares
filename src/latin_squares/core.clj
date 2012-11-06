@@ -154,7 +154,7 @@
   (mapv #( vec (partition dim 1 (take dim (repeat :nil)) %)) x))
 
 
-(defn grid-base
+(defn build-grid-base
   "generates for the given filled matrix the vector of the grid matrices
   for all possible dimensions"
   [x]
@@ -207,34 +207,34 @@
   [x]
   (reduce min (map #(count (set %)) x)))
 
-(defn latin-square?-1
-  [s]
-  (assert (= (count s) (max-row-len s)))
-  (assert (= (min-row-len s) (max-row-len s)))
-  (cond (contains-:nil? s) false
-        (not= (count (set (flatten s))) (max-row-len s)) false
-        (not= (count (set s)) (max-row-len s)) false
-        (not= (count (set (transpose s))) (max-row-len s)) false
-        (not= (min-row-member s) (max-row-member s)) false
-        (not= (min-row-member (transpose s)) (max-row-member (transpose s))) false
-        (< (min-row-member s) (max-row-len s)) false
-        (< (min-row-member (transpose s)) (max-row-len s)) false
-        :else true))
-
-(defn latin-square?-2
-  [s]
-  (let [dim (max-row-len s)]
-  (cond (not= (count s) dim) false
-        (not= (min-row-len s) dim) false
-        (contains-:nil? s) false
-        (not= (count (set (flatten s))) dim) false
-        (not= (count (set s)) dim) false
-        (not= (count (set (transpose s))) dim) false
-        (not= (min-row-member s) (max-row-member s)) false
-        (not= (min-row-member (transpose s)) (max-row-member (transpose s))) false
-        (< (min-row-member s) dim) false
-        (< (min-row-member (transpose s)) dim) false
-        :else true)))
+; (defn latin-square?-1
+;   [s]
+;   (assert (= (count s) (max-row-len s)))
+;   (assert (= (min-row-len s) (max-row-len s)))
+;   (cond (contains-:nil? s) false
+;         (not= (count (set (flatten s))) (max-row-len s)) false
+;         (not= (count (set s)) (max-row-len s)) false
+;         (not= (count (set (transpose s))) (max-row-len s)) false
+;         (not= (min-row-member s) (max-row-member s)) false
+;         (not= (min-row-member (transpose s)) (max-row-member (transpose s))) false
+;         (< (min-row-member s) (max-row-len s)) false
+;         (< (min-row-member (transpose s)) (max-row-len s)) false
+;         :else true))
+;
+; (defn latin-square?-2
+;   [s]
+;   (let [dim (max-row-len s)]
+;   (cond (not= (count s) dim) false
+;         (not= (min-row-len s) dim) false
+;         (contains-:nil? s) false
+;         (not= (count (set (flatten s))) dim) false
+;         (not= (count (set s)) dim) false
+;         (not= (count (set (transpose s))) dim) false
+;         (not= (min-row-member s) (max-row-member s)) false
+;         (not= (min-row-member (transpose s)) (max-row-member (transpose s))) false
+;         (< (min-row-member s) dim) false
+;         (< (min-row-member (transpose s)) dim) false
+;         :else true)))
 
 (defn latin-square?
   "returns true, if the given matrix is a latin square"
@@ -282,15 +282,170 @@
                                :else (inc j)))))))
 
 
+
 (defn solve
   [x]
   "return the accumulated set of latin squares in the given matrix"
-  (let [search-base (build-search-base (fill-x x))]
-    (loop [result #{}
-           i 0]
-      (cond (= i 2) result
-            :else (recur (conj (count-a-grid-item (nth search-base i)) result)
-                         (inc i))))))
+  (let [search-base (build-search-base (fill-x x))
+        dim-base (count search-base)
+        result (atom #{})]
+    (doseq [i (range dim-base)]
+      (let [grid-base (build-grid-base (nth search-base i))]
+        (doseq [j (range (count grid-base))]
+          (swap!  result into (count-a-grid-item (nth grid-base j))))))
+    @result))
+
+
+(defn solve-9
+  [x]
+  "return the accumulated set of latin squares in the given matrix"
+  (into #{}
+        (let [search-base (build-search-base (fill-x x))
+              dim-base (count search-base)]
+          (doseq [i (range dim-base)]
+            (let [grid-base (build-grid-base (nth search-base i))]
+              (doseq [j (range (count grid-base))]
+                (count-a-grid-item (nth grid-base j))))))))
+
+(defn solve-8
+  [x]
+  "return the accumulated set of latin squares in the given matrix"
+  (let [search-base (build-search-base (fill-x x))
+        dim-base (count search-base)]
+    (doseq [result #{}
+            i (range dim-base)]
+      (let [grid-base (build-grid-base (nth search-base i))]
+        (doseq [j (range (count grid-base))]
+          (conj result (count-a-grid-item (nth grid-base j))))))))
+
+
+(defn solve-7
+  [x]
+  "return the accumulated set of latin squares in the given matrix"
+  (let [search-base (build-search-base (fill-x x))
+        dim-base (count search-base)]
+    (doseq [result #{}
+            i (range dim-base)]
+      (let [grid-base (build-grid-base (nth search-base i))]
+        (doseq [j (range (count grid-base))]
+          (conj result (count-a-grid-item (nth grid-base j))))))))
+
+(defn solve-6
+  [x]
+  "return the accumulated set of latin squares in the given matrix"
+  (let [search-base (build-search-base (fill-x x))
+        dim-base (count search-base)
+        result #{}]
+    (doseq [i (range dim-base)]
+      (let [grid-base (build-grid-base (nth search-base i))]
+        (doseq [j (range (count grid-base))]
+          (conj result (count-a-grid-item (nth grid-base j))))))))
+
+(defn solve-5
+  [x]
+  "return the accumulated set of latin squares in the given matrix"
+  (let [search-base (build-search-base (fill-x x))
+        dim-base (count search-base)]
+    (doseq [i (range dim-base)]
+      (let [grid-base (build-grid-base (nth search-base i))]
+        (doseq [j (range (count grid-base))]
+          (count-a-grid-item (nth grid-base j)))))))
+
+(defn solve-4
+  [x]
+  "return the accumulated set of latin squares in the given matrix"
+  (let [search-base (build-search-base (fill-x x))
+        dim-base (count search-base)]
+    (dotimes [i dim-base]
+      (let [grid-base (build-grid-base (nth search-base i))]
+        (dotimes [j (count grid-base)]
+          (count-a-grid-item (nth grid-base j)))))))
+
+(defn solve-3
+  [x i j]
+  "return the set of latin squares at i j in the given search base"
+  (count-a-grid-item (nth (build-grid-base (nth x i)) j)))
+
+
+(defn solve-2
+  [x]
+  "return the accumulated set of latin squares in the given matrix"
+  (let [search-base (build-search-base (fill-x x))
+        dim-base (count search-base)
+        result (transient #{})]
+    (dotimes [i dim-base]
+      (let [grid-base (build-grid-base (nth search-base i))]
+        (dotimes [j (count grid-base)]
+          (conj! result (count-a-grid-item (nth grid-base j))))))))
+
+(defn solve-1
+  [x]
+  "return the accumulated set of latin squares in the given matrix"
+  (let [search-base (build-search-base (fill-x x))
+        dim-base (count search-base)
+        result #{}]
+    (dotimes [i dim-base]
+      (let [grid-base (build-grid-base (nth search-base i))]
+        (dotimes [j (count grid-base)]
+          (conj result (count-a-grid-item (nth grid-base j))))))))
+
+; (defn solve
+;   [x]
+;   "return the accumulated set of latin squares in the given matrix"
+;   (let [search-base (build-search-base (fill-x x))
+;         dim-base (count search-base)]
+;     (loop [curr-grid-base (build-grid-base (nth search-base 0))
+;            next-grid-base (cond (> dim-base 1)
+;                                 (build-grid-base (nth search-base 1))
+;                                 :else nil)
+;            result (count-a-grid-item (nth curr-grid-base 0))
+;            dim-grid (count curr-grid-base)
+;            dim-next-grid (cond (> dim-base 1) (count next-grid-base) :else 0)
+;            i 1
+;            j 1]
+;       (cond (= i dim-base) result
+;             :else (recur (cond (and (< i dim-base) (< j dim-grid))
+;                                curr-grid-base
+;                                :else next-grid-base)
+;                          (cond (and (< i dim-base) (= j dim-grid))
+;                                (build-grid-base (nth search-base i))
+;                                :else next-grid-base)
+;                          (cond (and (< i dim-base) (< j dim-grid))
+;                                (conj (count-a-grid-item
+;                                       (nth curr-grid-base j)) result)
+;                                :else result)
+;                          (cond (and (< i dim-base) (< j dim-grid))
+;                                dim-grid
+;                                :else dim-next-grid)
+;                          (cond (and (< i dim-base) (= j 0))
+;                                dim-next-grid
+;                                :else (count next-grid-base))
+;                          (cond (= j dim-grid) (inc i)
+;                                :else i)
+;                          (cond (= j dim-grid) 0
+;                                :else (inc j)))))))
+
+
+; (defn solve
+;   [x]
+;   "return the accumulated set of latin squares in the given matrix"
+;   (let [search-base (build-search-base (fill-x x))]
+;     (loop [curr-grid-base (build-grid-base (nth search-base 0))
+;            result (count-a-grid-item (nth curr-grid-base 0))
+;            dim-grid (count curr-grid-base)
+;            i 0
+;            j 1]
+;       (cond (= i (count search-base)) result
+;             :else (recur (cond (= j dim-grid) curr-grid-base
+;                                :else curr-grid-base)
+;                          (cond (= j dim-grid) result
+;                                :else result)
+;                          (cond (= j dim-grid) dim-grid
+;                                :else dim-grid)
+;                          (cond (= j dim-grid) (inc i)
+;                                :else i)
+;                          (cond (= j dim-grid) 0
+;                                :else (inc j)))))))
 
 
 ;;;;;;
