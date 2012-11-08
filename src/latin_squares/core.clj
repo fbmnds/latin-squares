@@ -44,19 +44,14 @@
               [8 1 2 4 5]])
 
 
-(defn max-row-len
-  "returns the length of the lengthiest row of a matrix"
-  [x]
+(fn [x](letfn [
+(max-row-len [x]
   (reduce max (map count x)))
 
-(defn min-row-len
-  "returns the lengths of the shortest row of a matrix"
-  [x]
+(min-row-len [x]
   (reduce min (map count x)))
 
-(defn fill-x
-  "fills all shorter rows of a matrix with :nil, if applicable"
-  [x]
+(fill-x  [x]
   (loop [y []
          row 0]
     (cond (= row (count x)) y
@@ -72,35 +67,22 @@
 
 
 
-(defn contains-:nil?
-  "returns true, if the seq contains :nil"
-  [x]
+(contains-:nil?  [x]
   (cond (= (some #{:nil} (flatten x)) :nil) true :else false))
 
-(defn only-:nil?
-  "returns true, if the seq contains only :nil"
-  [x]
+(only-:nil? [x]
   (= (count (filter (fn [y] (= :nil y)) (flatten x))) (count (flatten x))))
 
-(defn any-:nil?
-  "returns true, if the seq contains any :nil"
-  [x]
+(any-:nil? [x]
   (= (count (filter (fn [y] (= :nil y)) (flatten x))) 0))
 
 
-(defn shift-row
-  "returns the right-shifted vector, if the last element is :nil;
-  nil otherwise"
-  [row]
+(shift-row  [row]
   (assert (not (nil? row)))
   (cond (or (only-:nil? row) (not= (last row) :nil)) nil
         :else (vec (concat [:nil] (butlast row)))))
 
-(defn append-variants
-  "returns a vector of matrices, which results from appending all variants
-  (by right-shifting) of the right-aligned vector to the matrix;
-  this applies analogously, if the input matrix is nil"
-  [x v]
+(append-variants  [x v]
   (assert (or (only-:nil? v) (not= (first v) :nil))) ; right-aligned vector
   (cond (or (any-:nil? v) (only-:nil? v)) (conj [] (vec (conj x v)))
         :else (loop [y []
@@ -109,10 +91,7 @@
                       :else (recur (conj y (vec (conj x w))) (shift-row w))))))
 
 
-(defn build-search-base
-  "generates the vector of all matrix variants to be derived from the
-  nontrivial, filled matrix"
-  [x]
+(build-search-base  [x]
   (assert (not (nil? x)))
   (assert (<= 2 (count x)))
   (assert (<= 2 (min-row-len x)))
@@ -134,20 +113,14 @@
 
 
 
-(defn part-rows
-  "generates from a filled matrix the grid of all possible sub-squares
-  of a given sub-dimension"
-  [x dim]
+(part-rows  [x dim]
   (assert (= (max-row-len x) (min-row-len x))) ; i.e. filled matrix
   (assert (<= 2 dim (count x)))
   (assert (<= 2 dim (max-row-len x)))
   (mapv #( vec (partition dim 1 (take dim (repeat :nil)) %)) x))
 
 
-(defn build-grid-base
-  "generates for the given filled matrix the vector of the grid matrices
-  for all possible dimensions"
-  [x]
+(build-grid-base [x]
   (assert (not (nil? x)))
   (assert (<= 2 (count x)))
   (assert (<= 2 (min-row-len x)))
@@ -158,50 +131,28 @@
           :else (recur (into y [(part-rows x dim)]) (inc dim)))))
 
 
-(defn square-at
-  "returns the square of the given dimension at position i, j from a grid
-  of all possible sub-squares of the same dimension"
-  [parted-x dim i j]
+(square-at  [parted-x dim i j]
   (assert (= dim (count (nth (nth parted-x 0) 0))))
-  ;(assert (<= 2 dim (count (nth parted-x 0))))
   (assert (<= 2 dim (count parted-x)))
   (loop [y []
          di 0]
     (cond (= di dim) y
           :else (recur (conj y (nth (nth parted-x (+ i di)) j)) (inc di)))))
 
-
-
-
-;user> (mapv concat (map vector [1 2 3]) (map vector [4 5 6]))
-;[(1 4) (2 5) (3 6)]
-;user> (partition 3 (interleave [1 2 3 4 5] [6 7 8 9 10] [5 4 3 2 1]))
-;((1 6 5) (2 7 4) (3 8 3) (4 9 2) (5 10 1))
-;user> (transpose [[1 2 3 4 5] [6 7 8 9 10] [5 4 3 2 1]])
-;[(1 6 5) (2 7 4) (3 8 3) (4 9 2) (5 10 1)]
-(defn transpose
-  "returns the transpose of the matrix.
-  BUG: returns vector of lists instead vector of vectors."
-  [m]
+(transpose  [m]
   (loop [y (map vector (nth m 0))
          i 1]
     (cond (= i (count m)) y
           :else (recur (mapv concat y (map vector (nth m i))) (inc i)))))
 
-(defn max-row-member
-  "returns the maximum number of distinct elements per rows of a matrix"
-  [x]
+(max-row-member  [x]
   (reduce max (map #(count (set %)) x)))
 
-(defn min-row-member
-  "returns the minimum number of distinct elements per rows of a matrix"
-  [x]
+(min-row-member  [x]
   (reduce min (map #(count (set %)) x)))
 
 
-(defn latin-square?
-  "returns true, if the given matrix is a latin square"
-  [s]
+(latin-square?  [s]
   (let [dim (max-row-len s)]
     (cond (and (not (contains-:nil? s))
                (= dim
@@ -218,10 +169,7 @@
           :else false)))
 
 
-(defn count-a-grid-item
-  "returns the set of latin squares for the given grid item, i.e. the set of
-  latin squares of the dimension that is associated to the given grid item"
-  [x]
+(count-a-grid-item  [x]
   (assert (not (nil? x)))
   (let [dim-sq (count (nth (nth x 0) 0))
         dim-x-x (inc (- (count x) dim-sq))
@@ -246,9 +194,7 @@
 
 
 
-(defn solve
-  [x]
-  "return the accumulated set of latin squares in the given matrix"
+(solve  [x]
   (let [search-base (build-search-base (fill-x x))
         dim-base (count search-base)
         result (atom [])]
@@ -259,12 +205,10 @@
     (set @result)))
 
 
-(defn summary
-  [lsq]
-  "calculate the result summary from the given accumulated set of latin squares
-   (http://langref.org/clojure/maps/algorithms/histogram)"
+(summary  [lsq]
   (reduce conj {} (for [[x xs]
                         (group-by identity
                                   (sort < (for [r lsq]
                                     (count r))))]
-                    [x (count xs)])))
+                    [x (count xs)])))]
+ (summary (solve x))))
