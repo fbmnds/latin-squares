@@ -78,13 +78,11 @@
 
 
 (shift-row  [row]
-  (assert (not (nil? row)))
-  (cond (or (only-:nil? row) (not= (last row) :nil)) nil
+   (cond (or (only-:nil? row) (not= (last row) :nil)) nil
         :else (vec (concat [:nil] (butlast row)))))
 
 (append-variants  [x v]
-  (assert (or (only-:nil? v) (not= (first v) :nil))) ; right-aligned vector
-  (cond (or (any-:nil? v) (only-:nil? v)) (conj [] (vec (conj x v)))
+   (cond (or (any-:nil? v) (only-:nil? v)) (conj [] (vec (conj x v)))
         :else (loop [y []
                      w v]
                 (cond (nil? w) y
@@ -92,11 +90,7 @@
 
 
 (build-search-base  [x]
-  (assert (not (nil? x)))
-  (assert (<= 2 (count x)))
-  (assert (<= 2 (min-row-len x)))
-  (assert (= (min-row-len x) (max-row-len x)))
-  (cond (any-:nil? x) (vector x)
+   (cond (any-:nil? x) (vector x)
         :else (loop [y (append-variants nil (nth x 0))
                      row-x 1]
                 (cond (= row-x (count x)) y
@@ -114,27 +108,18 @@
 
 
 (part-rows  [x dim]
-  (assert (= (max-row-len x) (min-row-len x))) ; i.e. filled matrix
-  (assert (<= 2 dim (count x)))
-  (assert (<= 2 dim (max-row-len x)))
-  (mapv #( vec (partition dim 1 (take dim (repeat :nil)) %)) x))
+   (mapv #( vec (partition dim 1 (take dim (repeat :nil)) %)) x))
 
 
 (build-grid-base [x]
-  (assert (not (nil? x)))
-  (assert (<= 2 (count x)))
-  (assert (<= 2 (min-row-len x)))
-  (assert (= (min-row-len x) (max-row-len x)))
-  (loop [y [(part-rows x 2)]
+   (loop [y [(part-rows x 2)]
          dim 3]
     (cond (> dim (min (count x) (min-row-len x))) y
           :else (recur (into y [(part-rows x dim)]) (inc dim)))))
 
 
 (square-at  [parted-x dim i j]
-  (assert (= dim (count (nth (nth parted-x 0) 0))))
-  (assert (<= 2 dim (count parted-x)))
-  (loop [y []
+   (loop [y []
          di 0]
     (cond (= di dim) y
           :else (recur (conj y (nth (nth parted-x (+ i di)) j)) (inc di)))))
@@ -170,8 +155,7 @@
 
 
 (count-a-grid-item  [x]
-  (assert (not (nil? x)))
-  (let [dim-sq (count (nth (nth x 0) 0))
+   (let [dim-sq (count (nth (nth x 0) 0))
         dim-x-x (inc (- (count x) dim-sq))
         dim-x-y (count (nth x 0))]
     (loop [sq (square-at x dim-sq 0 0)
