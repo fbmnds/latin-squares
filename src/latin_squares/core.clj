@@ -66,6 +66,8 @@
                  (inc row)))))
 
 
+(vec-contains-:nil? [v]
+  (cond (= () (filter #(= :nil %) v)) false :else true))
 
 (contains-:nil?  [x]
   (cond (= (some #{:nil} (flatten x)) :nil) true :else false))
@@ -111,10 +113,10 @@
    (mapv #( vec (partition dim 1 (take dim (repeat :nil)) %)) x))
 
 
-(build-grid-base [x]
+(build-grid-base [x FIX]
    (loop [y [(part-rows x 2)]
          dim 3]
-    (cond (> dim (min (count x) (min-row-len x))) y
+    (cond (> dim (min (count x) FIX)) y
           :else (recur (into y [(part-rows x dim)]) (inc dim)))))
 
 
@@ -122,7 +124,9 @@
    (loop [y []
          di 0]
     (cond (= di dim) y
-          :else (recur (conj y (nth (nth parted-x (+ i di)) j)) (inc di)))))
+          :else (let [curr-row (nth (nth parted-x (+ i di)) j)]
+                  (cond (vec-contains-:nil? curr-row) nil
+                        :else (recur (conj y curr-row) (inc di)))))))
 
 (transpose  [m]
   (loop [y (map vector (nth m 0))
@@ -138,20 +142,18 @@
 
 
 (latin-square?  [s]
-  (let [dim (max-row-len s)]
-    (cond (and (not (contains-:nil? s))
-               (= dim
-                  (count s)
-                  (min-row-len s)
-                  (count (set (flatten s)))
-                  (count (set s))
-                  (count (set (transpose s)))
-                  (min-row-member s)
-                  (max-row-member s)
-                  (min-row-member (transpose s))
-                  (max-row-member (transpose s))))
-          true
-          :else false)))
+  (cond (nil? s) false
+        :else (let [dim (count s)]
+                (cond (not= dim (min-row-member s)) false
+                      (not= dim (max-row-member s)) false
+                      (not= dim (count (set (flatten s)))) false
+                      (not= dim (count (set s))) false
+                      (not= dim (min-row-len s)) false
+                      (not= dim (max-row-len s)) false
+                      (not= dim (count (set (transpose s)))) false
+                      (not= dim (min-row-member (transpose s))) false
+                      (not= dim (max-row-member (transpose s))) false
+                      :else true))))
 
 
 (count-a-grid-item  [x]
@@ -181,9 +183,10 @@
 (solve  [x]
   (let [search-base (build-search-base (fill-x x))
         dim-base (count search-base)
-        result (atom [])]
+        result (atom [])
+        FIX (min-row-len x)]
     (doseq [i (range dim-base)]
-      (let [grid-base (build-grid-base (nth search-base i))]
+      (let [grid-base (build-grid-base (nth search-base i) FIX)]
         (doseq [j (range (count grid-base))]
           (swap!  result into (count-a-grid-item (nth grid-base j))))))
     (set @result)))
@@ -195,4 +198,4 @@
                                   (sort < (for [r lsq]
                                     (count r))))]
                     [x (count xs)])))]
- (summary (solve x))))
+(summary (solve x))))
