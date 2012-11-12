@@ -128,11 +128,11 @@
                   (cond (vec-contains-:nil? curr-row) nil
                         :else (recur (conj y curr-row) (inc di)))))))
 
-(transpose  [m]
-  (loop [y (map vector (nth m 0))
-         i 1]
-    (cond (= i (count m)) y
-          :else (recur (mapv concat y (map vector (nth m i))) (inc i)))))
+
+
+(transpose [m]
+  (apply map vector m))
+
 
 (max-row-member  [x]
   (reduce max (map #(count (set %)) x)))
@@ -150,14 +150,15 @@
                       (not= dim (count (set s))) false
                       (not= dim (min-row-len s)) false
                       (not= dim (max-row-len s)) false
-                      (not= dim (count (set (transpose s)))) false
-                      (not= dim (min-row-member (transpose s))) false
-                      (not= dim (max-row-member (transpose s))) false
-                      :else true))))
+                      :else (let [REGISTER (transpose s)]
+                              (cond (not= dim (count (set REGISTER))) false
+                                    (not= dim (min-row-member REGISTER)) false
+                                    (not= dim (max-row-member REGISTER)) false
+                                    :else true))))))
 
 
 (count-a-grid-item  [x]
-   (let [dim-sq (count (nth (nth x 0) 0))
+  (let [dim-sq (count (nth (nth x 0) 0))
         dim-x-x (inc (- (count x) dim-sq))
         dim-x-y (count (nth x 0))]
     (loop [sq (square-at x dim-sq 0 0)
@@ -196,6 +197,7 @@
   (reduce conj {} (for [[x xs]
                         (group-by identity
                                   (sort < (for [r lsq]
-                                    (count r))))]
+                                            (count r))))]
                     [x (count xs)])))]
+
 (summary (solve x))))
