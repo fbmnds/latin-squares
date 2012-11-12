@@ -145,15 +145,15 @@
   (cond (nil? s) false
         :else (let [dim (count s)]
                 (cond (not= dim (min-row-member s)) false
-                      (not= dim (max-row-member s)) false
+                      ;(not= dim (max-row-member s)) false
                       (not= dim (count (set (flatten s)))) false
                       (not= dim (count (set s))) false
                       (not= dim (min-row-len s)) false
-                      (not= dim (max-row-len s)) false
+                      ;(not= dim (max-row-len s)) false
                       :else (let [REGISTER (transpose s)]
                               (cond (not= dim (count (set REGISTER))) false
                                     (not= dim (min-row-member REGISTER)) false
-                                    (not= dim (max-row-member REGISTER)) false
+                                    ;(not= dim (max-row-member REGISTER)) false
                                     :else true))))))
 
 
