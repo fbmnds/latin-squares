@@ -141,20 +141,12 @@
   (reduce min (map #(count (set %)) x)))
 
 
+
 (latin-square?  [s]
   (cond (nil? s) false
-        :else (let [dim (count s)]
-                (cond (not= dim (min-row-member s)) false
-                      ;(not= dim (max-row-member s)) false
-                      (not= dim (count (set (flatten s)))) false
-                      (not= dim (count (set s))) false
-                      (not= dim (min-row-len s)) false
-                      ;(not= dim (max-row-len s)) false
-                      :else (let [REGISTER (transpose s)]
-                              (cond (not= dim (count (set REGISTER))) false
-                                    (not= dim (min-row-member REGISTER)) false
-                                    ;(not= dim (max-row-member REGISTER)) false
-                                    :else true))))))
+        :else (and
+               (apply = (concat (map set s) (apply map #(set %&) s)))
+               (= (count (first s)) (count (set (first s)))))))
 
 
 (count-a-grid-item  [x]
@@ -180,17 +172,17 @@
                                :else (inc j)))))))
 
 
-
-(solve  [x]
+(solve [x]
   (let [search-base (build-search-base (fill-x x))
         dim-base (count search-base)
-        result (atom [])
         FIX (min-row-len x)]
-    (doseq [i (range dim-base)]
-      (let [grid-base (build-grid-base (nth search-base i) FIX)]
-        (doseq [j (range (count grid-base))]
-          (swap!  result into (count-a-grid-item (nth grid-base j))))))
-    (set @result)))
+    (for [i (range dim-base)
+          :let [grid-base (build-grid-base (nth search-base i) FIX)]
+          j (range (count grid-base))
+          :let [s (count-a-grid-item
+                   (nth grid-base j))]]
+      s)))
+
 
 
 (summary  [lsq]
@@ -200,4 +192,4 @@
                                             (count r))))]
                     [x (count xs)])))]
 
-(summary (solve x))))
+(summary (reduce into #{} (solve x)))))
