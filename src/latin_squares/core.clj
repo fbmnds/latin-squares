@@ -44,56 +44,60 @@
               [8 1 2 4 5]])
 
 
-(fn [x](letfn [
+(letfn [
+(mapv
+  ([f coll]
+     (-> (reduce (fn [v o] (conj! v (f o))) (transient []) coll)
+         persistent!))
+  ([f c1 c2]
+     (into [] (map f c1 c2)))
+  ([f c1 c2 c3]
+     (into [] (map f c1 c2 c3)))
+  ([f c1 c2 c3 & colls]
+     (into [] (apply map f c1 c2 c3 colls))))
+
 (max-row-len [x]
   (reduce max (map count x)))
 
 (min-row-len [x]
   (reduce min (map count x)))
 
+
 (fill-x  [x]
-  (loop [y []
-         row 0]
-    (cond (= row (count x)) y
-          :else (recur
-                 (cond (< (count (nth x row)) (max-row-len x))
-                       (conj y
-                             (vec
-                              (concat (nth x row)
-                                      (take (- (max-row-len x)
-                                               (count (nth x row))) (repeat :nil)))))
-                       :else (conj y (nth x row)))
-                 (inc row)))))
+  (let [dim (max-row-len x)
+        y (mapv vector x (map #(- dim (count %)) x))]
+    (mapv (fn [x] (vec (concat (repeat (x 1) :nil) (x 0)))) y)))
 
 
 (vec-contains-:nil? [v]
-  (cond (= () (filter #(= :nil %) v)) false :else true))
+  (cond (some #(= % :nil) v) true :else false))
 
-(contains-:nil?  [x]
-  (cond (= (some #{:nil} (flatten x)) :nil) true :else false))
 
-(only-:nil? [x]
-  (= (count (filter (fn [y] (= :nil y)) (flatten x))) (count (flatten x))))
+(only-:nil? [v]
+  (cond (some #(not= % :nil) v) false :else true))
+
 
 (any-:nil? [x]
-  (= (count (filter (fn [y] (= :nil y)) (flatten x))) 0))
+  (not (vec-contains-:nil? (flatten x))))
 
 
-(shift-row  [row]
-   (cond (or (only-:nil? row) (not= (last row) :nil)) nil
-        :else (vec (concat [:nil] (butlast row)))))
+(shift-left  [row]
+   (cond (or (only-:nil? row) (not= (row 0) :nil)) nil
+        :else (vec (concat (rest row) [:nil]))))
+
+
 
 (append-variants  [x v]
    (cond (or (any-:nil? v) (only-:nil? v)) (conj [] (vec (conj x v)))
         :else (loop [y []
                      w v]
                 (cond (nil? w) y
-                      :else (recur (conj y (vec (conj x w))) (shift-row w))))))
+                      :else (recur (conj y (vec (conj x w))) (shift-left w))))))
 
 
 (build-search-base  [x]
    (cond (any-:nil? x) (vector x)
-        :else (loop [y (append-variants nil (nth x 0))
+        :else (loop [y (append-variants nil (x 0))
                      row-x 1]
                 (cond (= row-x (count x)) y
                       :else (recur
@@ -103,8 +107,8 @@
                                :else (recur
                                       (inc iter-y)
                                       (into new-y
-                                            (append-variants (nth y iter-y)
-                                                             (nth x row-x))))))
+                                            (append-variants (y iter-y)
+                                                             (x row-x))))))
                              (inc row-x))))))
 
 
@@ -129,19 +133,6 @@
                         :else (recur (conj y curr-row) (inc di)))))))
 
 
-
-(transpose [m]
-  (apply map vector m))
-
-
-(max-row-member  [x]
-  (reduce max (map #(count (set %)) x)))
-
-(min-row-member  [x]
-  (reduce min (map #(count (set %)) x)))
-
-
-
 (latin-square?  [s]
   (cond (nil? s) false
         :else (and
@@ -153,23 +144,10 @@
   (let [dim-sq (count (nth (nth x 0) 0))
         dim-x-x (inc (- (count x) dim-sq))
         dim-x-y (count (nth x 0))]
-    (loop [sq (square-at x dim-sq 0 0)
-           result (cond (latin-square? sq) (conj #{} sq)
-                        :else #{})
-           i 0
-           j 1]
-      (cond (= i dim-x-x) result
-            :else (recur (cond (and (< i dim-x-x) (< j dim-x-y))
-                               (square-at x dim-sq i j)
-                               :else sq)
-                         (cond (and (< i dim-x-x) (< j dim-x-y))
-                               (cond (latin-square? sq) (conj result sq)
-                                     :else result)
-                               :else result)
-                         (cond (= j dim-x-y) (inc i)
-                               :else i)
-                         (cond (= j dim-x-y) 0
-                               :else (inc j)))))))
+    (for [i (range dim-x-x)
+          j (range dim-x-y)
+          :let [sq (square-at x dim-sq i j)]]
+      (cond (latin-square? sq) sq))))
 
 
 (solve [x]
@@ -184,12 +162,13 @@
       s)))
 
 
-
 (summary  [lsq]
-  (reduce conj {} (for [[x xs]
-                        (group-by identity
-                                  (sort < (for [r lsq]
-                                            (count r))))]
-                    [x (count xs)])))]
+  (dissoc
+   (reduce conj {}
+           (for [[x xs]
+                 (group-by identity
+                           (sort < (for [r lsq]
+                                     (count r))))]
+             [x (count xs)])) 0))]
 
-(summary (reduce into #{} (solve x)))))
+(fn [x]  (summary (reduce into #{} (solve x)))))
